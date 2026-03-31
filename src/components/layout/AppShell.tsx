@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import { useMemo, useState } from "react";
 import type { UserRole } from "../../types/domain";
 import { useAuth } from "../../context/AuthContext";
+import { isSuperAdminEmail } from "../../lib/adminConfig";
 import {
   canManageMembers,
   canViewApprovals
@@ -25,15 +26,23 @@ const navItems: NavItem[] = [
 ];
 
 export function AppShell(): JSX.Element {
-  const { profile, signOut } = useAuth();
+  const { profile, session, signOut } = useAuth();
   const [navOpen, setNavOpen] = useState(false);
 
   const visibleNavItems = useMemo(() => {
     if (!profile?.role) {
       return [];
     }
-    return navItems.filter((item) => item.visible(profile.role));
-  }, [profile?.role]);
+    const items = navItems.filter((item) => item.visible(profile.role));
+    if (isSuperAdminEmail(session?.user?.email)) {
+      items.push({
+        to: "/admin",
+        label: "Admin",
+        visible: () => true
+      });
+    }
+    return items;
+  }, [profile?.role, session?.user?.email]);
 
   return (
     <div className="app-shell">

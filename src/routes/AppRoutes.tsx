@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { useAuth } from "../context/AuthContext";
+import { isSuperAdminEmail } from "../lib/adminConfig";
+import { AdminPage } from "../pages/AdminPage";
 import { ApprovalsPage } from "../pages/ApprovalsPage";
 import { BudgetsPage } from "../pages/BudgetsPage";
 import { ExpenseReportsPage } from "../pages/ExpenseReportsPage";
@@ -25,9 +27,21 @@ function RequireSession({ children }: { children: JSX.Element }): JSX.Element {
 }
 
 function RequireProfile({ children }: { children: JSX.Element }): JSX.Element {
-  const { profile } = useAuth();
+  const { loading, profile } = useAuth();
+  if (loading) {
+    return <div className="splash">Loading treasury workspace...</div>;
+  }
   if (!profile) {
     return <Navigate to="/pending-access" replace />;
+  }
+  return children;
+}
+
+function RequireSuperAdmin({ children }: { children: JSX.Element }): JSX.Element {
+  const { session } = useAuth();
+  const email = session?.user?.email ?? "";
+  if (!isSuperAdminEmail(email)) {
+    return <Navigate to="/overview" replace />;
   }
   return children;
 }
@@ -61,6 +75,14 @@ export function AppRoutes(): JSX.Element {
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/expense-reports" element={<ExpenseReportsPage />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireSuperAdmin>
+              <AdminPage />
+            </RequireSuperAdmin>
+          }
+        />
         <Route path="/reimbursements" element={<ReimbursementsPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/settings" element={<SettingsPage />} />
