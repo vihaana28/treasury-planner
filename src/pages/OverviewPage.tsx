@@ -85,7 +85,7 @@ export function OverviewPage(): JSX.Element {
   );
 
   const revenueBreakdown = useMemo(
-    () => buildRevenueBreakdown(transactions).slice(0, 4),
+    () => buildRevenueBreakdown(transactions).slice(0, 6),
     [transactions]
   );
 
@@ -178,7 +178,7 @@ export function OverviewPage(): JSX.Element {
             </article>
 
             <article className="panel">
-              <h2>Top income sources</h2>
+              <h2>Where income comes from</h2>
               {revenueBreakdown.length === 0 ? (
                 <StateMessage title="No revenue lines in this range" />
               ) : (

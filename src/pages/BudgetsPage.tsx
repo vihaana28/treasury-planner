@@ -7,6 +7,7 @@ import type { BudgetCategory, Transaction } from "../types/domain";
 import {
   buildCategorySpendBreakdown,
   buildLeaderBreakdown,
+  buildRevenueBreakdown,
   parseSectionFromDescription,
   sanitizeTransactionDescription
 } from "../utils/financeBreakdown";
@@ -26,6 +27,7 @@ export function BudgetsPage(): JSX.Element {
   const [includeRollups, setIncludeRollups] = useState(false);
   const [mode, setMode] = useState<BreakdownMode>("category");
   const [selectedBucket, setSelectedBucket] = useState<string | null>(null);
+  const [selectedIncomeBucket, setSelectedIncomeBucket] = useState<string | null>(null);
   const [editableCaps, setEditableCaps] = useState<Record<string, number>>({});
 
   async function loadBudgetStudioData(): Promise<void> {
@@ -97,6 +99,10 @@ export function BudgetsPage(): JSX.Element {
       includeRollups
     });
   }, [mode, filteredTransactions, budgets, includeRollups]);
+  const incomeBuckets = useMemo(
+    () => buildRevenueBreakdown(filteredTransactions),
+    [filteredTransactions]
+  );
 
   const categoryNameById = useMemo(
     () => new Map(budgets.map((budget) => [budget.id, budget.name])),
@@ -131,6 +137,18 @@ export function BudgetsPage(): JSX.Element {
       })
       .slice(0, 20);
   }, [selectedBucket, mode, filteredTransactions, categoryNameById]);
+  const incomeBucketTransactions = useMemo(() => {
+    if (!selectedIncomeBucket) {
+      return [];
+    }
+    return filteredTransactions
+      .filter(
+        (transaction) =>
+          transaction.direction === "income" &&
+          parseSectionFromDescription(transaction.description) === selectedIncomeBucket
+      )
+      .slice(0, 20);
+  }, [selectedIncomeBucket, filteredTransactions]);
 
   const totalIncome = useMemo(
     () =>
@@ -291,6 +309,39 @@ export function BudgetsPage(): JSX.Element {
             </article>
 
             <article className="panel">
+              <h2>Income breakdown</h2>
+              {incomeBuckets.length === 0 ? (
+                <StateMessage title="No income activity available" />
+              ) : (
+                <div className="breakdown-list">
+                  {incomeBuckets.map((bucket) => (
+                    <button
+                      type="button"
+                      key={bucket.id}
+                      className={
+                        selectedIncomeBucket === bucket.label
+                          ? "breakdown-row breakdown-row--selected"
+                          : "breakdown-row"
+                      }
+                      onClick={() => setSelectedIncomeBucket(bucket.label)}
+                    >
+                      <div className="breakdown-row__meta">
+                        <strong>{bucket.label}</strong>
+                        <span>{toUsd(bucket.amount)}</span>
+                      </div>
+                      <div className="progress">
+                        <div
+                          className="progress__fill progress__fill--info"
+                          style={{ width: `${Math.max(2, Math.round(bucket.share * 100))}%` }}
+                        />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </article>
+
+            <article className="panel">
               <h2>Selected bucket transactions</h2>
               {!selectedBucket ? (
                 <StateMessage title="Pick a bucket from the left chart" />
@@ -308,6 +359,36 @@ export function BudgetsPage(): JSX.Element {
                     </thead>
                     <tbody>
                       {bucketTransactions.map((transaction) => (
+                        <tr key={transaction.id}>
+                          <td>{toShortDate(transaction.occurred_on)}</td>
+                          <td>{sanitizeTransactionDescription(transaction.description)}</td>
+                          <td className="align-right">{toUsd(transaction.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </article>
+
+            <article className="panel">
+              <h2>Selected income transactions</h2>
+              {!selectedIncomeBucket ? (
+                <StateMessage title="Pick an income bucket from the left chart" />
+              ) : incomeBucketTransactions.length === 0 ? (
+                <StateMessage title="No rows for this bucket" />
+              ) : (
+                <div className="table-wrap">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th className="align-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {incomeBucketTransactions.map((transaction) => (
                         <tr key={transaction.id}>
                           <td>{toShortDate(transaction.occurred_on)}</td>
                           <td>{sanitizeTransactionDescription(transaction.description)}</td>
