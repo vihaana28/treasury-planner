@@ -6,12 +6,14 @@ import { BudgetsPage } from "../pages/BudgetsPage";
 import { ExpenseReportsPage } from "../pages/ExpenseReportsPage";
 import { MembersPage } from "../pages/MembersPage";
 import { OverviewPage } from "../pages/OverviewPage";
+import { PendingAccessPage } from "../pages/PendingAccessPage";
 import { ReimbursementsPage } from "../pages/ReimbursementsPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { SignInPage } from "../pages/SignInPage";
+import { SignupPage } from "../pages/SignupPage";
 import { TransactionsPage } from "../pages/TransactionsPage";
 
-function RequireAuth({ children }: { children: JSX.Element }): JSX.Element {
+function RequireSession({ children }: { children: JSX.Element }): JSX.Element {
   const { loading, session } = useAuth();
   if (loading) {
     return <div className="splash">Loading treasury workspace...</div>;
@@ -22,16 +24,35 @@ function RequireAuth({ children }: { children: JSX.Element }): JSX.Element {
   return children;
 }
 
+function RequireProfile({ children }: { children: JSX.Element }): JSX.Element {
+  const { profile } = useAuth();
+  if (!profile) {
+    return <Navigate to="/pending-access" replace />;
+  }
+  return children;
+}
+
 export function AppRoutes(): JSX.Element {
   return (
     <Routes>
       <Route path="/signin" element={<SignInPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route
+        path="/pending-access"
+        element={
+          <RequireSession>
+            <PendingAccessPage />
+          </RequireSession>
+        }
+      />
       <Route
         path="/"
         element={
-          <RequireAuth>
-            <AppShell />
-          </RequireAuth>
+          <RequireSession>
+            <RequireProfile>
+              <AppShell />
+            </RequireProfile>
+          </RequireSession>
         }
       >
         <Route index element={<Navigate to="/overview" replace />} />
@@ -44,7 +65,7 @@ export function AppRoutes(): JSX.Element {
         <Route path="/members" element={<MembersPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/overview" replace />} />
+      <Route path="*" element={<Navigate to="/signin" replace />} />
     </Routes>
   );
 }

@@ -1,5 +1,14 @@
 import { supabase } from "../lib/supabase";
-import type { BudgetCategory, ExpenseReport, Profile, Reimbursement, Transaction } from "../types/domain";
+import type {
+  BudgetCategory,
+  ExpenseReport,
+  Organization,
+  Profile,
+  Reimbursement,
+  SignupRequest,
+  UserRole,
+  Transaction
+} from "../types/domain";
 
 export interface TransactionFilters {
   from?: string;
@@ -100,5 +109,87 @@ export const TreasuryDataService = {
       throw result.error;
     }
     return (result.data ?? []) as Profile[];
+  },
+
+  async getOrganizationsForSignup(): Promise<Organization[]> {
+    const result = await supabase
+      .from("organizations")
+      .select("id, name, currency, timezone, created_at")
+      .order("name");
+
+    if (result.error) {
+      throw result.error;
+    }
+    return (result.data ?? []) as Organization[];
+  },
+
+  async getSignupRequests(organizationId: string): Promise<SignupRequest[]> {
+    const result = await supabase
+      .from("signup_requests")
+      .select("*")
+      .eq("organization_id", organizationId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+
+    if (result.error) {
+      throw result.error;
+    }
+    return (result.data ?? []) as SignupRequest[];
+  },
+
+  async approveSignupRequest(
+    request: SignupRequest,
+    role: UserRole,
+    reviewerId: string
+  ): Promise<void> {
+    const profileInsert = await supabase.from("profiles").upsert(
+      {
+        id: request.user_id,
+        organization_id: request.organization_id,
+        full_name: request.full_name,
+        role
+      },
+      {
+        onConflict: "id"
+      }
+    );
+
+    if (profileInsert.error) {
+      throw profileInsert.error;
+    }
+
+    const requestUpdate = await supabase
+      .from("signup_requests")
+      .update({
+        status: "approved",
+        requested_role: role,
+        reviewed_by: reviewerId,
+        reviewed_at: new Date().toISOString()
+      })
+      .eq("id", request.id);
+
+    if (requestUpdate.error) {
+      throw requestUpdate.error;
+    }
+  },
+
+  async rejectSignupRequest(
+    request: SignupRequest,
+    reviewerId: string,
+    reviewNote?: string
+  ): Promise<void> {
+    const requestUpdate = await supabase
+      .from("signup_requests")
+      .update({
+        status: "rejected",
+        reviewed_by: reviewerId,
+        reviewed_at: new Date().toISOString(),
+        review_note: reviewNote ?? null
+      })
+      .eq("id", request.id);
+
+    if (requestUpdate.error) {
+      throw requestUpdate.error;
+    }
   }
 };

@@ -1,6 +1,7 @@
 export type UserRole = "admin" | "treasurer" | "member";
 
 export type ExpenseStatus = "submitted" | "approved" | "rejected" | "paid";
+export type SignupRequestStatus = "pending" | "approved" | "rejected";
 
 export interface Organization {
   id: string;
@@ -159,4 +160,18 @@ export interface PaymentMeta {
   method: string;
   paidAt: string;
   reference?: string;
+}
+
+export interface SignupRequest {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  full_name: string;
+  email: string;
+  requested_role: UserRole;
+  status: SignupRequestStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  created_at: string;
 }

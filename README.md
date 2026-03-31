@@ -5,6 +5,7 @@ Role-based React + Vite + Supabase dashboard for fraternity/sorority treasury op
 ## Features
 
 - Role-aware navigation (`admin`, `treasurer`, `member`)
+- Signup request flow with admin/treasurer approval queue
 - Cash-flow overview KPIs
 - Budget monitoring and threshold alerts (in-app)
 - Expense workflow: `submit -> approve/reject -> reimburse`
@@ -51,6 +52,7 @@ npm run test:run
 
 1. Run migration in your Supabase project:
    - `supabase/migrations/20260331143000_treasury_dashboard_init.sql`
+   - `supabase/migrations/20260331223000_signup_requests_and_admin_approval.sql`
 2. Deploy edge functions:
    - `create-expense-report`
    - `approve-expense-report`
@@ -60,6 +62,11 @@ npm run test:run
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
+
+- Signup and access:
+  - New users can request access at `/signup`.
+  - Treasurer/admin approves requests from the `Approvals` page.
+  - Approved users are provisioned into `profiles` automatically.
 
 ## Notes
 

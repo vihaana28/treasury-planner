@@ -58,6 +58,10 @@ p {
   margin: 0;
 }
 
+a {
+  color: #ffd6a5;
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -424,6 +428,10 @@ button:focus-visible {
 
 .form-error {
   color: #ffc1c1;
+}
+
+.form-success {
+  color: #b5f5d4;
 }
 
 .item-builder {
