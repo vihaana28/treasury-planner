@@ -7,7 +7,8 @@ import type { BudgetCategory, Transaction } from "../types/domain";
 import {
   buildCategorySpendBreakdown,
   buildLeaderBreakdown,
-  parseSectionFromDescription
+  parseSectionFromDescription,
+  sanitizeTransactionDescription
 } from "../utils/financeBreakdown";
 import { toShortDate, toUsd } from "../utils/format";
 
@@ -81,7 +82,7 @@ export function BudgetsPage(): JSX.Element {
   const filteredTransactions = useMemo(
     () =>
       transactions.filter((transaction) =>
-        includeRollups ? true : parseSectionFromDescription(transaction.description) !== "Rollup Summary"
+        includeRollups ? true : parseSectionFromDescription(transaction.description) !== "Total Costs"
       ),
     [transactions, includeRollups]
   );
@@ -309,7 +310,7 @@ export function BudgetsPage(): JSX.Element {
                       {bucketTransactions.map((transaction) => (
                         <tr key={transaction.id}>
                           <td>{toShortDate(transaction.occurred_on)}</td>
-                          <td>{transaction.description}</td>
+                          <td>{sanitizeTransactionDescription(transaction.description)}</td>
                           <td className="align-right">{toUsd(transaction.amount)}</td>
                         </tr>
                       ))}

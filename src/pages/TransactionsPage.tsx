@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { TreasuryDataService } from "../services/treasuryDataService";
 import type { Transaction } from "../types/domain";
 import { toShortDate, toUsd } from "../utils/format";
+import { sanitizeTransactionDescription } from "../utils/financeBreakdown";
 
 function startOfMonthIso(): string {
   const now = new Date();
@@ -61,7 +62,7 @@ export function TransactionsPage(): JSX.Element {
       return transactions;
     }
     return transactions.filter((transaction) =>
-      transaction.description.toLowerCase().includes(term)
+      sanitizeTransactionDescription(transaction.description).toLowerCase().includes(term)
     );
   }, [transactions, search]);
 
@@ -117,7 +118,7 @@ export function TransactionsPage(): JSX.Element {
               {filteredTransactions.map((transaction) => (
                 <tr key={transaction.id}>
                   <td>{toShortDate(transaction.occurred_on)}</td>
-                  <td>{transaction.description}</td>
+                  <td>{sanitizeTransactionDescription(transaction.description)}</td>
                   <td>
                     <span className={`status-pill status-pill--${transaction.direction}`}>
                       {transaction.direction}

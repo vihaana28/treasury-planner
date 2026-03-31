@@ -7,14 +7,24 @@ export interface BucketTotal {
   share: number;
 }
 
+export function sanitizeTransactionDescription(description: string): string {
+  return description
+    .replace(/^\[[^\]]*\]\s*/i, "")
+    .replace(/^main\s+row\s*\d+\s*:\s*/i, "")
+    .replace(/^row\s*\d+\s*:\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function parseSectionFromDescription(description: string): string {
-  const marker = description.indexOf(": ");
+  const cleaned = sanitizeTransactionDescription(description);
+  const marker = cleaned.indexOf(": ");
   if (marker < 0) {
     return "Uncategorized";
   }
-  const payload = description.slice(marker + 2);
+  const payload = cleaned.slice(marker + 2);
   if (payload.startsWith("Summary:")) {
-    return "Rollup Summary";
+    return "Total Costs";
   }
   const section = payload.split(":")[0]?.trim();
   return section || "Uncategorized";
@@ -53,7 +63,7 @@ export function buildCategorySpendBreakdown(params: {
     const categoryName =
       (transaction.category_id ? budgetNameById.get(transaction.category_id) : undefined) ??
       parseSectionFromDescription(transaction.description);
-    if (!params.includeRollups && categoryName === "Rollup Summary") {
+    if (!params.includeRollups && categoryName === "Total Costs") {
       continue;
     }
     totals.set(categoryName, (totals.get(categoryName) ?? 0) + transaction.amount);
@@ -102,7 +112,7 @@ export function buildLeaderBreakdown(
       continue;
     }
     const section = parseSectionFromDescription(transaction.description);
-    if (!includeRollups && section === "Rollup Summary") {
+    if (!includeRollups && section === "Total Costs") {
       continue;
     }
     const leader = getLeaderFromDescription(transaction.description);
