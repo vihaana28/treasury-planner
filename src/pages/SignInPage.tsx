@@ -41,7 +41,8 @@ export function SignInPage(): JSX.Element {
         </p>
         {!isSupabaseConfigured ? (
           <div className="warning-callout" role="alert">
-            Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `.env` before sign-in.
+            Add `VITE_SUPABASE_URL` and either `VITE_SUPABASE_ANON_KEY` or
+            `VITE_SUPABASE_PUBLISHABLE_KEY` to `.env` before sign-in.
           </div>
         ) : null}
         <form onSubmit={handleSubmit} className="form-grid">

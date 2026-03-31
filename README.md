@@ -33,6 +33,8 @@ npm install
 cp .env.example .env
 ```
 
+You can use either `VITE_SUPABASE_ANON_KEY` or `VITE_SUPABASE_PUBLISHABLE_KEY`.
+
 3. Run the frontend:
 
 ```bash
