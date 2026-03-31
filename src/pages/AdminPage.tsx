@@ -4,11 +4,13 @@ import { useAuth } from "../context/AuthContext";
 import { isSuperAdminEmail, SUPER_ADMIN_EMAIL } from "../lib/adminConfig";
 import { supabase } from "../lib/supabase";
 import { TreasuryDataService } from "../services/treasuryDataService";
-import type { SignupRequest, UserRole } from "../types/domain";
+import type { Organization, SignupRequest, UserRole } from "../types/domain";
 import { toShortDate } from "../utils/format";
 
 export function AdminPage(): JSX.Element {
   const { session, profile } = useAuth();
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>("");
   const [signupRequests, setSignupRequests] = useState<SignupRequest[]>([]);
   const [rolesByRequest, setRolesByRequest] = useState<Record<string, UserRole>>({});
   const [loading, setLoading] = useState(true);
@@ -20,15 +22,15 @@ export function AdminPage(): JSX.Element {
   const email = session?.user?.email?.toLowerCase() ?? "";
   const isAllowedEmail = isSuperAdminEmail(email);
 
-  async function loadRequests(): Promise<void> {
-    if (!profile?.organization_id) {
+  async function loadRequests(organizationId: string): Promise<void> {
+    if (!organizationId) {
       setLoading(false);
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const requests = await TreasuryDataService.getSignupRequests(profile.organization_id);
+      const requests = await TreasuryDataService.getSignupRequests(organizationId);
       setSignupRequests(requests);
       setRolesByRequest((current) => {
         const next = { ...current };
@@ -51,11 +53,32 @@ export function AdminPage(): JSX.Element {
       setLoading(false);
       return;
     }
-    void loadRequests();
+    TreasuryDataService.getOrganizationsForSignup()
+      .then((result) => {
+        setOrganizations(result);
+        if (profile?.organization_id) {
+          setSelectedOrganizationId(profile.organization_id);
+          void loadRequests(profile.organization_id);
+          return;
+        }
+        const fallbackOrgId = result[0]?.id ?? "";
+        setSelectedOrganizationId(fallbackOrgId);
+        if (fallbackOrgId) {
+          void loadRequests(fallbackOrgId);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch((nextError: unknown) => {
+        setError(
+          nextError instanceof Error ? nextError.message : "Could not load organizations."
+        );
+        setLoading(false);
+      });
   }, [profile?.organization_id, isAllowedEmail]);
 
   async function handleApprove(request: SignupRequest): Promise<void> {
-    if (!profile) {
+    if (!session?.user?.id) {
       return;
     }
     setError(null);
@@ -63,22 +86,25 @@ export function AdminPage(): JSX.Element {
       await TreasuryDataService.approveSignupRequest(
         request,
         rolesByRequest[request.id] ?? "member",
-        profile.id
+        profile?.id ?? session.user.id
       );
-      await loadRequests();
+      await loadRequests(selectedOrganizationId);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Could not approve request.");
     }
   }
 
   async function handleReject(request: SignupRequest): Promise<void> {
-    if (!profile) {
+    if (!session?.user?.id) {
       return;
     }
     setError(null);
     try {
-      await TreasuryDataService.rejectSignupRequest(request, profile.id);
-      await loadRequests();
+      await TreasuryDataService.rejectSignupRequest(
+        request,
+        profile?.id ?? session.user.id
+      );
+      await loadRequests(selectedOrganizationId);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Could not reject request.");
     }
@@ -165,6 +191,23 @@ export function AdminPage(): JSX.Element {
 
       <article className="panel">
         <h2>Account approvals</h2>
+        <label>
+          Organization
+          <select
+            value={selectedOrganizationId}
+            onChange={(event) => {
+              const nextOrg = event.target.value;
+              setSelectedOrganizationId(nextOrg);
+              void loadRequests(nextOrg);
+            }}
+          >
+            {organizations.map((organization) => (
+              <option key={organization.id} value={organization.id}>
+                {organization.name}
+              </option>
+            ))}
+          </select>
+        </label>
         {loading ? <StateMessage kind="loading" title="Loading account requests..." /> : null}
         {error ? <StateMessage kind="error" title="Could not load account requests" detail={error} /> : null}
 

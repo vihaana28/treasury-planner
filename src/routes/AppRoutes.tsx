@@ -52,6 +52,16 @@ export function AppRoutes(): JSX.Element {
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route
+        path="/admin"
+        element={
+          <RequireSession>
+            <RequireSuperAdmin>
+              <AdminPage />
+            </RequireSuperAdmin>
+          </RequireSession>
+        }
+      />
+      <Route
         path="/pending-access"
         element={
           <RequireSession>
@@ -75,14 +85,6 @@ export function AppRoutes(): JSX.Element {
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/expense-reports" element={<ExpenseReportsPage />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
-        <Route
-          path="/admin"
-          element={
-            <RequireSuperAdmin>
-              <AdminPage />
-            </RequireSuperAdmin>
-          }
-        />
         <Route path="/reimbursements" element={<ReimbursementsPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/settings" element={<SettingsPage />} />
