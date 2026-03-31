@@ -3,6 +3,8 @@ import { OverviewPage } from "./OverviewPage";
 
 const getKpis = vi.fn();
 const getAlerts = vi.fn();
+const getTransactions = vi.fn();
+const getBudgets = vi.fn();
 
 vi.mock("../context/AuthContext", () => ({
   useAuth: () => ({
@@ -22,7 +24,18 @@ vi.mock("../services/dashboardService", () => ({
   }
 }));
 
+vi.mock("../services/treasuryDataService", () => ({
+  TreasuryDataService: {
+    getTransactions: (...args: unknown[]) => getTransactions(...args),
+    getBudgets: (...args: unknown[]) => getBudgets(...args)
+  }
+}));
+
 describe("OverviewPage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("renders KPI cards and alert empty state", async () => {
     getKpis.mockResolvedValue({
       cashPosition: 200,
@@ -34,6 +47,8 @@ describe("OverviewPage", () => {
       pendingReimbursements: 1
     });
     getAlerts.mockResolvedValue([]);
+    getTransactions.mockResolvedValue([]);
+    getBudgets.mockResolvedValue([]);
 
     render(<OverviewPage />);
 
@@ -45,6 +60,8 @@ describe("OverviewPage", () => {
   it("shows error state when service call fails", async () => {
     getKpis.mockRejectedValue(new Error("Network issue"));
     getAlerts.mockResolvedValue([]);
+    getTransactions.mockResolvedValue([]);
+    getBudgets.mockResolvedValue([]);
 
     render(<OverviewPage />);
     expect(await screen.findByText("Could not load overview")).toBeInTheDocument();

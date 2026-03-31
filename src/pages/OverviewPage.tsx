@@ -3,7 +3,12 @@ import { KpiCard } from "../components/common/KpiCard";
 import { StateMessage } from "../components/common/StateMessage";
 import { useAuth } from "../context/AuthContext";
 import { DashboardService } from "../services/dashboardService";
-import type { Alert, DashboardKpis } from "../types/domain";
+import { TreasuryDataService } from "../services/treasuryDataService";
+import type { Alert, BudgetCategory, DashboardKpis, Transaction } from "../types/domain";
+import {
+  buildCategorySpendBreakdown,
+  buildRevenueBreakdown
+} from "../utils/financeBreakdown";
 import { toUsd } from "../utils/format";
 
 function startOfMonthIso(): string {
@@ -20,6 +25,8 @@ export function OverviewPage(): JSX.Element {
   const { profile } = useAuth();
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [budgets, setBudgets] = useState<BudgetCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [from, setFrom] = useState(startOfMonthIso());
@@ -35,11 +42,15 @@ export function OverviewPage(): JSX.Element {
     setError(null);
     Promise.all([
       DashboardService.getKpis(profile.organization_id, { from, to }),
-      DashboardService.getAlerts(profile.organization_id)
+      DashboardService.getAlerts(profile.organization_id),
+      TreasuryDataService.getTransactions(profile.organization_id, { from, to }),
+      TreasuryDataService.getBudgets(profile.organization_id)
     ])
-      .then(([nextKpis, nextAlerts]) => {
+      .then(([nextKpis, nextAlerts, nextTransactions, nextBudgets]) => {
         setKpis(nextKpis);
         setAlerts(nextAlerts);
+        setTransactions(nextTransactions);
+        setBudgets(nextBudgets);
       })
       .catch((nextError: unknown) => {
         const message = nextError instanceof Error ? nextError.message : "Unable to load overview";
@@ -62,6 +73,21 @@ export function OverviewPage(): JSX.Element {
       { label: "Pending Reimbursements", value: String(kpis.pendingReimbursements), tone: "neutral" }
     ] as const;
   }, [kpis]);
+
+  const spendBreakdown = useMemo(
+    () =>
+      buildCategorySpendBreakdown({
+        transactions,
+        budgets,
+        includeRollups: false
+      }).slice(0, 6),
+    [transactions, budgets]
+  );
+
+  const revenueBreakdown = useMemo(
+    () => buildRevenueBreakdown(transactions).slice(0, 4),
+    [transactions]
+  );
 
   if (!profile) {
     return (
@@ -117,6 +143,62 @@ export function OverviewPage(): JSX.Element {
                   }}
                 />
               </div>
+              <div className="inline-metrics">
+                <p>
+                  <span className="muted">Period income:</span> {toUsd(kpis?.monthToDateIncome ?? 0)}
+                </p>
+                <p>
+                  <span className="muted">Period expense:</span> {toUsd(kpis?.monthToDateExpense ?? 0)}
+                </p>
+              </div>
+            </article>
+
+            <article className="panel">
+              <h2>Where money is going</h2>
+              {spendBreakdown.length === 0 ? (
+                <StateMessage title="No expense lines in this range" />
+              ) : (
+                <div className="breakdown-list">
+                  {spendBreakdown.map((bucket) => (
+                    <div key={bucket.id} className="breakdown-row">
+                      <div className="breakdown-row__meta">
+                        <strong>{bucket.label}</strong>
+                        <span>{toUsd(bucket.amount)}</span>
+                      </div>
+                      <div className="progress">
+                        <div
+                          className="progress__fill progress__fill--warning"
+                          style={{ width: `${Math.max(2, Math.round(bucket.share * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+
+            <article className="panel">
+              <h2>Top income sources</h2>
+              {revenueBreakdown.length === 0 ? (
+                <StateMessage title="No revenue lines in this range" />
+              ) : (
+                <div className="breakdown-list">
+                  {revenueBreakdown.map((bucket) => (
+                    <div key={bucket.id} className="breakdown-row">
+                      <div className="breakdown-row__meta">
+                        <strong>{bucket.label}</strong>
+                        <span>{toUsd(bucket.amount)}</span>
+                      </div>
+                      <div className="progress">
+                        <div
+                          className="progress__fill progress__fill--info"
+                          style={{ width: `${Math.max(2, Math.round(bucket.share * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </article>
 
             <article className="panel">

@@ -57,6 +57,19 @@ export const TreasuryDataService = {
     return (result.data ?? []) as BudgetCategory[];
   },
 
+  async updateBudgetLimit(categoryId: string, limitAmount: number): Promise<void> {
+    const result = await supabase
+      .from("budget_categories")
+      .update({
+        limit_amount: limitAmount
+      })
+      .eq("id", categoryId);
+
+    if (result.error) {
+      throw result.error;
+    }
+  },
+
   async getApprovalsQueue(organizationId: string): Promise<ExpenseReport[]> {
     const result = await supabase
       .from("expense_reports")

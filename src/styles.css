@@ -3,16 +3,17 @@
 :root {
   font-family: "Space Grotesk", sans-serif;
   color: #f6efe6;
-  background: radial-gradient(circle at 15% 20%, #3d5a80 0%, #1b263b 35%, #0d1b2a 70%);
+  background: radial-gradient(circle at 8% 14%, #284864 0%, #101f35 42%, #0a1324 76%);
   --ink: #f6efe6;
   --muted: #c8ced8;
-  --panel: rgba(8, 22, 38, 0.82);
+  --panel: rgba(8, 20, 34, 0.86);
   --panel-border: rgba(145, 171, 202, 0.28);
-  --accent: #f4a261;
-  --accent-soft: #ffd6a5;
+  --accent: #f4b16d;
+  --accent-soft: #ffe4bc;
   --critical: #ff5f5f;
   --warning: #f6c453;
   --safe: #54d69a;
+  --info: #8dc3ff;
 }
 
 *,
@@ -190,10 +191,11 @@ a {
 }
 
 .kpi-card {
-  padding: 0.95rem;
+  padding: 1rem;
   border-radius: 0.95rem;
   background: var(--panel);
   border: 1px solid var(--panel-border);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
 .kpi-card__label {
@@ -228,6 +230,9 @@ a {
   padding: 1rem;
   display: grid;
   gap: 0.8rem;
+  box-shadow:
+    0 14px 40px rgba(1, 6, 15, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .variance-meter {
@@ -417,6 +422,7 @@ button:focus-visible {
 .row-actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .warning-callout {
@@ -504,15 +510,57 @@ button:focus-visible {
 }
 
 .progress__fill--info {
-  background: #84b9ff;
+  background: linear-gradient(90deg, #6ea7f5, #9ecbff);
 }
 
 .progress__fill--warning {
-  background: #f6c453;
+  background: linear-gradient(90deg, #dca340, #f8d377);
 }
 
 .progress__fill--critical {
-  background: #ff5f5f;
+  background: linear-gradient(90deg, #dd5858, #ff8585);
+}
+
+.inline-metrics {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+}
+
+.breakdown-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.breakdown-row {
+  border: 1px solid rgba(145, 171, 202, 0.28);
+  border-radius: 0.82rem;
+  padding: 0.58rem 0.64rem;
+  background: rgba(8, 18, 32, 0.62);
+  display: grid;
+  gap: 0.45rem;
+}
+
+button.breakdown-row {
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+}
+
+.breakdown-row--selected {
+  border-color: rgba(244, 177, 109, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(244, 177, 109, 0.35);
+}
+
+.breakdown-row__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+
+.breakdown-row__meta span {
+  color: var(--accent-soft);
 }
 
 .signin-page {
