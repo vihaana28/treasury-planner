@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { useAuth } from "../context/AuthContext";
 import { isSuperAdminEmail } from "../lib/adminConfig";
@@ -17,11 +17,12 @@ import { TransactionsPage } from "../pages/TransactionsPage";
 
 function RequireSession({ children }: { children: JSX.Element }): JSX.Element {
   const { loading, session } = useAuth();
+  const location = useLocation();
   if (loading) {
     return <div className="splash">Loading treasury workspace...</div>;
   }
   if (!session) {
-    return <Navigate to="/signin" replace />;
+    return <Navigate to="/signin" replace state={{ from: location.pathname }} />;
   }
   return children;
 }

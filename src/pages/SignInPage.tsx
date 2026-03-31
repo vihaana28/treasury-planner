@@ -1,11 +1,13 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { isSuperAdminEmail } from "../lib/adminConfig";
 import { isSupabaseConfigured } from "../lib/supabase";
 
 export function SignInPage(): JSX.Element {
   const { session, signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -13,9 +15,23 @@ export function SignInPage(): JSX.Element {
 
   useEffect(() => {
     if (session) {
+      const state = location.state as { from?: string } | null;
+      const from = state?.from;
+      const isAdminEmail = isSuperAdminEmail(session.user.email);
+
+      if (isAdminEmail) {
+        navigate(from ?? "/admin", { replace: true });
+        return;
+      }
+
+      if (from && from !== "/admin") {
+        navigate(from, { replace: true });
+        return;
+      }
+
       navigate("/overview", { replace: true });
     }
-  }, [session, navigate]);
+  }, [session, navigate, location.state]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
